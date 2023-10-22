@@ -64,4 +64,30 @@ class SQLStatementTests: XCTestCase {
         ]
         XCTAssertEqual(statement.segments, segments)
     }
+
+    func testBuildingStatementByInterpolatingAnArrayOfInts() {
+        let id = [1, 2]
+        let statement = SQLStatement("select foo from bar where id in (\(array: id))")
+        let segments: [SQLStatement.Segment] = [
+            .raw("select foo from bar where id in ("),
+            .parameter(1),
+            .raw(", "),
+            .parameter(2),
+            .raw(")"),
+        ]
+        XCTAssertEqual(statement.segments, segments)
+    }
+
+    func testBuildingStatementByInterpolatingAnArrayOfStrings() {
+        let id = ["P1", "P2"]
+        let statement = SQLStatement("select foo from bar where id in (\(array: id))")
+        let segments: [SQLStatement.Segment] = [
+            .raw("select foo from bar where id in ("),
+            .parameter("P1"),
+            .raw(", "),
+            .parameter("P2"),
+            .raw(")"),
+        ]
+        XCTAssertEqual(statement.segments, segments)
+    }
 }

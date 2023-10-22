@@ -224,6 +224,19 @@ extension SQLStatement: ExpressibleByStringInterpolation {
             sqlStatement.append(parameter: interpolation)
         }
 
+        public mutating func appendInterpolation(array interpolation: [SQLValue?]) {
+            guard let firstElement = interpolation.first else {
+                return
+            }
+
+            sqlStatement.append(parameter: firstElement)
+
+            for element in interpolation.dropFirst() {
+                sqlStatement.append(raw: ", ")
+                sqlStatement.append(parameter: element)
+            }
+        }
+
         public mutating func appendInterpolation(_ interpolation: SQLStatementConvertible) {
             sqlStatement.append(interpolation)
         }
