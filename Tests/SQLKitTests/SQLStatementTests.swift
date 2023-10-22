@@ -90,4 +90,28 @@ class SQLStatementTests: XCTestCase {
         ]
         XCTAssertEqual(statement.segments, segments)
     }
+
+    func testGenerateRawSQLForStatementWithoutAnyParameters() {
+        let statement = SQLStatement("select id, name, city from parts")
+
+        var parameters: [SQLValue?] = []
+        let rawSQL = statement.rawSQLByReplacingParameters { value in
+            parameters.append(value)
+            return "$" + String(parameters.count)
+        }
+        XCTAssertEqual(rawSQL, "select id, name, city from parts")
+    }
+
+    func testGenerateRawSQLForStatementWithParameters() {
+        let partId = "P1"
+        let city = "London"
+        let statement = SQLStatement("select id, name, city from parts where id = \(partId) and city = \(city)")
+
+        var parameters: [SQLValue?] = []
+        let rawSQL = statement.rawSQLByReplacingParameters { value in
+            parameters.append(value)
+            return "$" + String(parameters.count)
+        }
+        XCTAssertEqual(rawSQL, "select id, name, city from parts where id = $1 and city = $2")
+    }
 }

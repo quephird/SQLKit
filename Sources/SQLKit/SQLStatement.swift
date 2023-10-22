@@ -135,7 +135,7 @@ public struct SQLStatement: Hashable {
     public func rawSQLByReplacingParameters(with mapping: (_ value: SQLValue?) throws -> String) rethrows -> String {
         return try segments.map {
             try $0.replacingParameter(with: mapping)
-        }.reduce("", +)
+        }.joined()
     }
 }
 
