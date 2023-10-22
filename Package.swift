@@ -33,5 +33,8 @@ let package = Package(
                 .apt(["libpq-dev"])
             ]
         ),
+        .testTarget(
+            name: "SQLKitTests",
+            dependencies: ["SQLKit"]),
     ]
 )

@@ -57,7 +57,7 @@ public protocol SQLStatementConvertible {
 /// cases, none at all—each client must determine for itself how it will convert a 
 /// `SQLStatement` into parameters and a flat query string; the 
 /// `rawSQLByReplacingParameters(with:)` method can help with that.
-public struct SQLStatement {
+public struct SQLStatement: Hashable {
     /// An individual piece of a `SQLStatement`. Each segment is either `raw`, 
     /// in which case it represents a fragment of pre-escaped SQL which should be 
     /// passed directly to the server, or `parameter`, in which case it represents a 
@@ -228,6 +228,7 @@ extension SQLStatement: ExpressibleByStringInterpolation {
             sqlStatement.append(interpolation)
         }
 
+        @_disfavoredOverload
         public mutating func appendInterpolation<T>(_ interpolation: T) {
             sqlStatement.append(parameter: String(describing: interpolation))
         }
@@ -238,45 +239,30 @@ extension SQLStatement: ExpressibleByStringInterpolation {
     }
 }
 
-extension SQLStatement: Hashable {
-    /// Compares two `SQLStatement`s.
-    /// 
-    /// - Note: For the purpose of this comparison, all `SQLValue`s which are not 
-    ///          `Hashable` are considered equal to each other.
-    public static func == (lhs: SQLStatement, rhs: SQLStatement) -> Bool {
-        guard lhs.segments.count == rhs.segments.count else {
+extension SQLStatement.Segment: Equatable {
+    public static func == (lhs: SQLStatement.Segment, rhs: SQLStatement.Segment) -> Bool {
+        switch (lhs, rhs) {
+        case (.raw(let lSQL), .raw(let rSQL)):
+            return lSQL == rSQL
+
+        case (.parameter(let lValue), .parameter(let rValue)):
+            return (lValue as? AnyHashable) == (rValue as? AnyHashable)
+
+        case (.raw, .parameter), (.parameter, .raw):
             return false
         }
-        
-        for (l, r) in zip(lhs.segments, rhs.segments) {
-            switch (l, r) {
-            case (.raw(let lSQL), .raw(let rSQL)) where lSQL != rSQL:
-                return false
-                
-            case (.parameter(let lValue), .parameter(let rValue)) where (lValue as? AnyHashable) != (rValue as? AnyHashable):
-                return false
-                
-            case (.raw, .parameter), (.parameter, .raw):
-                return false
-                
-            default:
-                // This element doesn't disqualify us.
-                break
-            }
-        }
-        return true
     }
+}
 
+extension SQLStatement.Segment: Hashable {
     public func hash(into hasher: inout Hasher) {
-        for segment in self.segments {
-            switch segment {
-            case .raw(let sql):
-                hasher.combine(sql)
-                hasher.combine("raw")
-            case .parameter(let value):
-                hasher.combine(value as? AnyHashable)
-                hasher.combine("parameter")
-            }
+        switch self {
+        case .raw(let sql):
+            hasher.combine(sql)
+            hasher.combine("raw")
+        case .parameter(let value):
+            hasher.combine(value as? AnyHashable)
+            hasher.combine("parameter")
         }
     }
 }
