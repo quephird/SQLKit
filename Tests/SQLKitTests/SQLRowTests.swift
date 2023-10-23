@@ -126,6 +126,31 @@ class SQLRowTests: XCTestCase {
         }
     }
 
-    // TODO: Test retrieval of null value with SQLColumnKey
-    // TODO: Test usage of SQLNullableColumnKey
+    func testRowLookupUsingKeyThatAllowsForANullValue() throws {
+        let row = SQLRow<MockSQLClient>(statement: "select id from parts", state: MockSQLClient.RowState())
+        let testKey = SQLNullableColumnKey<Int>(SQLColumnKey(index: 5, name: "nullable_column"))
+        let actualValue = try row.value(for: testKey)
+
+        XCTAssertEqual(actualValue, nil)
+    }
+
+    func testRowLookupUsingKeyThatDisallowsANullValue() throws {
+        let row = SQLRow<MockSQLClient>(statement: "select id from parts", state: MockSQLClient.RowState())
+        let testKey = SQLColumnKey<Int>(index: 5, name: "nullable_column")
+
+        XCTAssertThrowsError(try row.value(for: testKey)) { error in
+            switch error {
+            case SQLError.valueInvalid(let underlyingError, let key, let statement):
+                if case SQLValueError.valueNull = underlyingError {
+                    XCTAssertEqual(key.index, 5)
+                    XCTAssertEqual(key.name, "nullable_column")
+                    XCTAssertEqual(statement, "select id from parts")
+                } else {
+                    XCTFail("Unexpected underlying error thrown")
+                }
+            default:
+                XCTFail("Unexpected top-level error thrown")
+            }
+        }
+    }
 }
