@@ -22,7 +22,12 @@ public struct SQLRow<Client: SQLClient> {
     /// and some clients may expose low-level data structures through the state 
     /// object.
     public var state: Client.RowState
-    
+
+    public init(statement: SQLStatement, state: Client.RowState) {
+        self.statement = statement
+        self.state = state
+    }
+
     /// Returns the value in the column indicated by the provided key.
     /// 
     /// - Throws: If a connection error occurs, if the value is `NULL` and the key 
